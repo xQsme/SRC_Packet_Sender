@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 #include <QTime>
 #include <QtDebug>
+#include <QFile>
 
 void help();
 void chooseFile(QString file);
@@ -66,6 +67,21 @@ void help()
 
 void chooseFile(QString file){
     qDebug() << "file";
+
+    if (file.isEmpty()){
+        qDebug() << "Choose a file";
+    }else{
+        QFile ficheiro(file);
+
+        if (!ficheiro.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            qDebug() << "Not possible to open file";
+            return;
+        }else{
+            qDebug() << "File open";
+            QString content = ficheiro.readAll();
+            ficheiro.close();
+        }
+    }
 }
 
 void interval(int millisecondsToWait){
