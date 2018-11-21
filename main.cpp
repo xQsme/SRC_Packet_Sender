@@ -1,13 +1,5 @@
-<<<<<<< HEAD
 #include <QtCore>
 #include "Packet.h"
-=======
-#include <QCommandLineParser>
-#include <QCoreApplication>
-#include <QTime>
-#include <QtDebug>
-#include <QFile>
->>>>>>> cb9c2ec5acb5673a798ebe51b6104512a78eed31
 
 void help();
 void interval(int millisecondsToWait);
@@ -75,8 +67,6 @@ void help()
                 "\n-t\t--total\t\tTotal packets to send (Default 1)" ;
 }
 
-<<<<<<< HEAD
-=======
 void chooseFile(QString file){
     qDebug() << "file";
 
@@ -95,7 +85,6 @@ void chooseFile(QString file){
         }
     }
 }
->>>>>>> cb9c2ec5acb5673a798ebe51b6104512a78eed31
 
 void interval(int millisecondsToWait)
 {
