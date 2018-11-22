@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
     QStringList args = parser.optionNames();
 
-    int ms=1000;
+    int ms=100;
     QList<pcpp::Packet> packets;
 
     if(args.contains("h") || args.contains("help")){
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 void help()
 {
     qDebug() << "Usage:\n-f\t--file\t\tChoose a file containing the packet to send" <<
-                "\n-i\t--interval\tInterval between packets sent in ms (Default 1000)";
+                "\n-i\t--interval\tInterval between packets sent in ms (Default 100)";
 }
 
 void interval(int millisecondsToWait)
