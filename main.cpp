@@ -1,12 +1,15 @@
 #include <QtCore>
+#include <QNetworkInterface>
 #include "Packet.h"
+#include "PcapLiveDeviceList.h"
+#include "PcapFileDevice.h"
+#include "IPv4Layer.h"
 
 void help();
 void interval(int millisecondsToWait);
-void start(pcpp::Packet packet, int num, int ms);
-void delay(int millisecondsToWait );
-pcpp::Packet parsePacket(QFile* file);
-int send(pcpp::Packet packet);
+void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev);
+void delay(int millisecondsToWait);
+int parsePackets(QList<pcpp::Packet>* packets, QString file);
 
 int main(int argc, char *argv[])
 {
@@ -16,22 +19,19 @@ int main(int argc, char *argv[])
                 QCoreApplication::translate("main", "Usage Help"));
     parser.addOption(helpOption);
     QCommandLineOption targetInputOption(QStringList() << "f" << "file",
-                QCoreApplication::translate("main", "Specify a file"));
+                QCoreApplication::translate("main", "Specify a file"),
+                QCoreApplication::translate("main", "file"));
     parser.addOption(targetInputOption);
     QCommandLineOption intervalOption(QStringList() << "i" << "interval" ,
                 QCoreApplication::translate("main", "chosse a interval in ms"));
     parser.addOption(intervalOption);
-    QCommandLineOption totalOption(QStringList() << "t" << "total",
-                QCoreApplication::translate("main", "amount of time to send package"));
-    parser.addOption(totalOption);
 
     parser.process(a);
 
     QStringList args = parser.optionNames();
 
     int ms=1000;
-    int total=1;
-    pcpp::Packet packet;
+    QList<pcpp::Packet> packets;
 
     if(args.contains("h") || args.contains("help")){
         help();
@@ -39,8 +39,11 @@ int main(int argc, char *argv[])
     }
 
     if(args.contains("f") || args.contains("file")){
-        QFile file(parser.value(targetInputOption));
-        parsePacket(&file);
+        QString file = parser.value(targetInputOption);
+        if(parsePackets(&packets, file)==0)
+        {
+            return -1;
+        }
     }
     else {
         help();
@@ -50,12 +53,14 @@ int main(int argc, char *argv[])
     if(args.contains("i") || args.contains("interval")){
        ms =  parser.value(intervalOption).toInt();
     }
-
-    if(args.contains("t") || args.contains("total")){
-        total =  parser.value(totalOption).toInt();
+    std::string interfaceIPAddr;
+    foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
+    {
+        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost))
+                 interfaceIPAddr =  address.toString().toStdString();
     }
-
-    start(packet, total, ms);
+    pcpp::PcapLiveDevice* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByIp(interfaceIPAddr.c_str());
+    start(packets, ms, dev);
 
     return 0;
 }
@@ -63,27 +68,7 @@ int main(int argc, char *argv[])
 void help()
 {
     qDebug() << "Usage:\n-f\t--file\t\tChoose a file containing the packet to send" <<
-                "\n-i\t--interval\tInterval between packets sent in ms (Default 1000)" <<
-                "\n-t\t--total\t\tTotal packets to send (Default 1)" ;
-}
-
-void chooseFile(QString file){
-    qDebug() << "file";
-
-    if (file.isEmpty()){
-        qDebug() << "Choose a file";
-    }else{
-        QFile ficheiro(file);
-
-        if (!ficheiro.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qDebug() << "Not possible to open file";
-            return;
-        }else{
-            qDebug() << "File open";
-            QString content = ficheiro.readAll();
-            ficheiro.close();
-        }
-    }
+                "\n-i\t--interval\tInterval between packets sent in ms (Default 1000)";
 }
 
 void interval(int millisecondsToWait)
@@ -100,29 +85,47 @@ void delay(int millisecondsToWait )
     }
 }
 
-pcpp::Packet parsePacket(QFile* file)
+int parsePackets(QList<pcpp::Packet>* packets, QString file)
 {
-    pcpp::Packet packet;
-    return packet;
+    pcpp::IFileReaderDevice* reader = pcpp::IFileReaderDevice::getReader(file.toLocal8Bit().data());
+    if (reader == NULL)
+    {
+        qDebug() << "Invalid packet file.";
+        return 0;
+    }
+    if (!reader->open())
+    {
+        qDebug() << "Cannot open packet reader.";
+        return 0;
+    }
+    pcpp::RawPacket rawPacket;
+    while (reader->getNextPacket(rawPacket))
+    {
+        packets->append(pcpp::Packet(&rawPacket));
+    }
+    reader->close();
+    return 1;
 }
 
-void start(pcpp::Packet packet, int num, int ms)
+void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev)
 {
     qDebug() << "Sending packet(s)...";
-    for(int i=1;i<=num;i++)
+    QString IP = QString::fromStdString(packets[0].getLayerOfType<pcpp::IPv4Layer>()->getSrcIpAddress().toString());
+    int count=0;
+    dev->open();
+    foreach(pcpp::Packet packet, packets)
     {
-        if(send(packet)){
-            qDebug() << "Packet sent.";
-        }
-        if(i!= num)
+        if(dev->sendPacket(&packet))
         {
-            interval(ms);
+            qDebug() << "Packet sent to" << IP;
+            count++;
         }
+        else
+        {
+            qDebug() << "Failed sending packet to" << IP;
+        }
+        interval(ms);
     }
-    qDebug() << "Sent" << num << "packet(s).";
-}
-
-int send(pcpp::Packet packet)
-{
-    return 1;
+    dev->close();
+    qDebug() << "Sent" << count << "packet(s).";
 }

@@ -12,10 +12,10 @@ MAKEFILE      = Makefile
 
 CC            = gcc
 CXX           = g++
-DEFINES       = -DQT_DEPRECATED_WARNINGS -DQT_NO_DEBUG -DQT_CORE_LIB
+DEFINES       = -DQT_DEPRECATED_WARNINGS -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -O2 -march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong -fno-plt -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -O2 -march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong -fno-plt -std=gnu++11 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I../../SRC_Packet_Sender -I. -isystem /usr/local/include/pcapplusplus -isystem /usr/include/qt -isystem /usr/include/qt/QtCore -I. -I/usr/lib/qt/mkspecs/linux-g++
+INCPATH       = -I../../SRC_Packet_Sender -I. -isystem /usr/local/include/pcapplusplus -isystem /usr/include/qt -isystem /usr/include/qt/QtNetwork -isystem /usr/include/qt/QtCore -I. -I/usr/lib/qt/mkspecs/linux-g++
 QMAKE         = /usr/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -38,7 +38,7 @@ DISTNAME      = packetSender1.0.0
 DISTDIR = /home/xqsme/Git/SRC_Packet_Sender/build-packetSender-Desktop-Release/.tmp/packetSender1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1 -Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now
-LIBS          = $(SUBLIBS) -lPcap++ -lPacket++ -lCommon++ -lpcap -lQt5Core -lpthread 
+LIBS          = $(SUBLIBS) -lPcap++ -lPacket++ -lCommon++ -lpcap -lQt5Network -lQt5Core -lpthread 
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -271,6 +271,7 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/qt_config.prf \
 		/usr/lib/qt/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/qt/mkspecs/features/spec_post.prf \
+		../.qmake.stash \
 		/usr/lib/qt/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/qt/mkspecs/features/toolchain.prf \
 		/usr/lib/qt/mkspecs/features/default_pre.prf \
@@ -519,6 +520,7 @@ Makefile: ../packetSender.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib/
 		/usr/lib/qt/mkspecs/features/qt_config.prf \
 		/usr/lib/qt/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/qt/mkspecs/features/spec_post.prf \
+		.qmake.stash \
 		/usr/lib/qt/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/qt/mkspecs/features/toolchain.prf \
 		/usr/lib/qt/mkspecs/features/default_pre.prf \
@@ -537,6 +539,7 @@ Makefile: ../packetSender.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib/
 		/usr/lib/qt/mkspecs/features/yacc.prf \
 		/usr/lib/qt/mkspecs/features/lex.prf \
 		../packetSender.pro \
+		/usr/lib/libQt5Network.prl \
 		/usr/lib/libQt5Core.prl
 	$(QMAKE) -o Makefile ../packetSender.pro -spec linux-g++ CONFIG+=qtquickcompiler
 /usr/lib/qt/mkspecs/features/spec_pre.prf:
@@ -758,6 +761,7 @@ Makefile: ../packetSender.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib/
 /usr/lib/qt/mkspecs/features/qt_config.prf:
 /usr/lib/qt/mkspecs/linux-g++/qmake.conf:
 /usr/lib/qt/mkspecs/features/spec_post.prf:
+.qmake.stash:
 /usr/lib/qt/mkspecs/features/exclusive_builds.prf:
 /usr/lib/qt/mkspecs/features/toolchain.prf:
 /usr/lib/qt/mkspecs/features/default_pre.prf:
@@ -776,6 +780,7 @@ Makefile: ../packetSender.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib/
 /usr/lib/qt/mkspecs/features/yacc.prf:
 /usr/lib/qt/mkspecs/features/lex.prf:
 ../packetSender.pro:
+/usr/lib/libQt5Network.prl:
 /usr/lib/libQt5Core.prl:
 qmake: FORCE
 	@$(QMAKE) -o Makefile ../packetSender.pro -spec linux-g++ CONFIG+=qtquickcompiler
