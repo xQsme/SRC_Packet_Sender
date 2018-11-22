@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
     QStringList args = parser.optionNames();
 
-    int ms=100;
+    int ms=1000;
     QList<pcpp::Packet> packets;
 
     if(args.contains("h") || args.contains("help")){
@@ -81,7 +81,7 @@ void delay(int millisecondsToWait )
     QTime *dieTime = new QTime(QTime::currentTime().addMSecs( millisecondsToWait ));
     while( QTime::currentTime() < *dieTime )
     {
-        QCoreApplication::processEvents( QEventLoop::AllEvents, 100 );
+        QCoreApplication::processEvents( QEventLoop::AllEvents, 10 );
     }
 }
 
