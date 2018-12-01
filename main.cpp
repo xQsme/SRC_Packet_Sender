@@ -6,9 +6,7 @@
 #include "IPv4Layer.h"
 
 void help();
-void interval(int millisecondsToWait);
 void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev);
-void delay(int millisecondsToWait);
 int parsePackets(QList<pcpp::Packet>* packets, QString file);
 
 int main(int argc, char *argv[])
@@ -23,14 +21,15 @@ int main(int argc, char *argv[])
                 QCoreApplication::translate("main", "file"));
     parser.addOption(targetInputOption);
     QCommandLineOption intervalOption(QStringList() << "i" << "interval" ,
-                QCoreApplication::translate("main", "chosse a interval in ms"));
+                QCoreApplication::translate("main", "chosse a interval in ms"),
+                QCoreApplication::translate("main", "interval"));
     parser.addOption(intervalOption);
 
     parser.process(a);
 
     QStringList args = parser.optionNames();
 
-    int ms=1000;
+    int ms=100;
     QList<pcpp::Packet> packets;
 
     if(args.contains("h") || args.contains("help")){
@@ -69,20 +68,6 @@ void help()
 {
     qDebug() << "Usage:\n-f\t--file\t\tChoose a file containing the packet to send" <<
                 "\n-i\t--interval\tInterval between packets sent in ms (Default 100)";
-}
-
-void interval(int millisecondsToWait)
-{
-    delay(millisecondsToWait);
-}
-
-void delay(int millisecondsToWait )
-{
-    QTime *dieTime = new QTime(QTime::currentTime().addMSecs( millisecondsToWait ));
-    while( QTime::currentTime() < *dieTime )
-    {
-        QCoreApplication::processEvents( QEventLoop::AllEvents, 10 );
-    }
 }
 
 int parsePackets(QList<pcpp::Packet>* packets, QString file)
@@ -124,7 +109,7 @@ void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev)
         {
             qDebug() << "Failed sending packet to" << IP;
         }
-        interval(ms);
+        QThread::msleep(ms);
     }
     dev->close();
     qDebug() << "Sent" << count << "packet(s).";
