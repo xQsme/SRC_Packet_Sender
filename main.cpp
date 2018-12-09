@@ -55,42 +55,36 @@ int main(int argc, char *argv[])
 
 
     std::string interfaceIPAddr;
-
-    QList<QNetworkInterface> allInterfaces = QNetworkInterface::allInterfaces();
-    QList<QString> lst;
+    QList<QString> list;
     int i= 1;
-
-    foreach(QNetworkInterface inter,allInterfaces){
-        QString msg = QString::number(i)+" -> "+inter.humanReadableName();
-        QList<QNetworkAddressEntry> address= inter.addressEntries();
-
-        foreach (const QNetworkAddressEntry &add, address){
+    foreach(QNetworkInterface inter,QNetworkInterface::allInterfaces()){
+        foreach (const QNetworkAddressEntry &add, inter.addressEntries()){
             if (add.ip().protocol() == QAbstractSocket::IPv4Protocol){
+                QString msg = QString::number(i)+" -> "+inter.humanReadableName();
                 msg.append(" - "+add.ip().toString());
-                lst.append(msg);
+                list.append(msg);
+                i++;
             }
         }
-        i++;
     }
-    QString final = "Enter option ("+QString::number(1)+"-"+QString::number(allInterfaces.length())+"):";
+    QString final = "Enter option ("+QString::number(1)+"-"+QString::number(list.length())+"):";
     int opcao;
     do{
         qDebug() << "Select an interface:";
-        foreach(QString std , lst){
+        foreach(QString std , list){
             qDebug() << std;
         }
         qDebug() << final;
         scanf("%d",&opcao);
-    }while(opcao<1 || opcao >allInterfaces.length());
+    }while(opcao<1 || opcao > list.length());
 
-    QString selected = lst.value(opcao-1);
-    QString ip = selected.split("- ")[1];
+    QString ip = list.value(opcao-1).split("- ")[1];
     interfaceIPAddr = ip.toStdString();
-
     pcpp::PcapLiveDevice* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByIp(interfaceIPAddr.c_str());
     if(dev == NULL)
     {
         qDebug() << "Unable to create device.";
+        return -1;
     }
     return start(packets, ms, dev);
 }
@@ -125,15 +119,14 @@ int parsePackets(QList<pcpp::Packet>* packets, QString file)
 
 int start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev)
 {
-    qDebug() << "Sending packet(s)...";
-    QString IP;
-    int count=0;
     if(!dev->open()){
         qDebug() << "Unable to open device, please run with elevated privileges.";
         return -1;
     }
+    qDebug() << "Sending packet(s)...";
+    QString IP;
+    int count=0;
     pcpp::IPv4Layer* ipLayer;
-
     foreach(pcpp::Packet packet, packets)
     {
         ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
