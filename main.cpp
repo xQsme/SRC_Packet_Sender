@@ -52,12 +52,57 @@ int main(int argc, char *argv[])
     if(args.contains("i") || args.contains("interval")){
        ms =  parser.value(intervalOption).toInt();
     }
+
+
     std::string interfaceIPAddr;
-    foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
+    /*foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
     {
         if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost))
                  interfaceIPAddr =  address.toString().toStdString();
+    }*/
+
+    QList<QNetworkInterface> allInterfaces = QNetworkInterface::allInterfaces();
+    qDebug() << "Select a interface:";
+    QList<QString> lst;
+    int i= 1;
+
+    foreach(QNetworkInterface inter,allInterfaces){
+        QString msg = QString::number(i)+" -> "+inter.humanReadableName();
+        QList<QNetworkAddressEntry> address= inter.addressEntries();
+
+        foreach (const QNetworkAddressEntry &add, address){
+            if (add.ip().protocol() == QAbstractSocket::IPv4Protocol){
+                msg.append(" - "+add.ip().toString());
+                //qDebug()<< msg;
+                lst.append(msg);
+            }
+        }
+        i++;
     }
+
+    foreach(QString std , lst){
+        qDebug()<< std;
+    }
+
+    QString final = "Enter option ("+QString::number(1)+"-"+QString::number(allInterfaces.length())+") ->";
+    qDebug() << final;
+    int opcao;
+
+    do{
+        scanf("%d",&opcao);
+        if(opcao<1 || opcao >allInterfaces.length()){
+            QString final = "Pls enter an option between("+QString::number(1)+"-"+QString::number(allInterfaces.length())+") ->";
+            qDebug() << final;
+        }
+    }while(opcao<1 || opcao >allInterfaces.length());
+
+    QString selected = lst.value(opcao-1);
+
+    QString ip = selected.split("- ")[1];
+    interfaceIPAddr = ip.toStdString();
+
+
+
     pcpp::PcapLiveDevice* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByIp(interfaceIPAddr.c_str());
     start(packets, ms, dev);
 
@@ -98,8 +143,14 @@ void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev)
     QString IP = QString::fromStdString(packets[0].getLayerOfType<pcpp::IPv4Layer>()->getSrcIpAddress().toString());
     int count=0;
     dev->open();
+    pcpp::IPv4Layer* ipLayer;
+
     foreach(pcpp::Packet packet, packets)
     {
+        ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
+        ipLayer->setSrcIpAddress(pcpp::IPv4Address(IP.toStdString()));
+        packet.computeCalculateFields();
+
         if(dev->sendPacket(&packet))
         {
             qDebug() << "Packet sent to" << IP;
