@@ -7,7 +7,7 @@
 
 void help();
 int parsePackets(QList<pcpp::Packet>* packets, QString file);
-void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat);
+void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat, QString src);
 
 int main(int argc, char *argv[])
 {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
         qDebug() << "Unable to create device.";
         return -1;
     }
-    start(packets, ms, dev, repeat);
+    start(packets, ms, dev, repeat, ip);
 
     return 0;
 }
@@ -130,7 +130,7 @@ int parsePackets(QList<pcpp::Packet>* packets, QString file)
     return 1;
 }
 
-void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat)
+void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat, QString src)
 {
     if(!dev->open()){
         qDebug() << "Unable to open device, please run with elevated privileges.";
@@ -145,7 +145,7 @@ void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int r
         foreach(pcpp::Packet packet, packets)
         {
             ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
-            ipLayer->setSrcIpAddress(pcpp::IPv4Address(IP.toStdString()));
+            ipLayer->setSrcIpAddress(pcpp::IPv4Address(src.toStdString()));
             packet.computeCalculateFields();
             IP = QString::fromStdString(ipLayer->getDstIpAddress().toString());
             if(dev->sendPacket(&packet))
