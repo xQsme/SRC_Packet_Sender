@@ -1,8 +1,8 @@
 # SRC_Packet_Sender
 
-Requires qt5
+Requires qt5 and libpcap
 
-The point of this program is to send packets previous saved
+The point of this program is to send previously saved packets
 
 ```
 https://github.com/xQsme/SRC_Packet_Sender
@@ -12,11 +12,12 @@ cd SRC_Packet_Sender/release
 
 Usage:
 ```
--f   --file            Choose a file containing the packet to send
+-f   --file            Choose a file containing the packet(s) to send
 -i   --interval        Interval between packets sent in ms (Default 100) 
--r   --repeat          Choose how much time to repeat the send (Default 1 time)";
+-r   --repeat          Choose how many times to repeat (Default 1)";
 ```
 
 Common Usage:
 ```
-./packetSender -f file
+./packetSender -f pathToFile
+```
