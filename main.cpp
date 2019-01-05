@@ -7,7 +7,7 @@
 
 void help();
 int parsePackets(QList<pcpp::Packet>* packets, QString file);
-void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev);
+void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat);
 
 int main(int argc, char *argv[])
 {
@@ -21,11 +21,11 @@ int main(int argc, char *argv[])
                 QCoreApplication::translate("main", "file"));
     parser.addOption(targetInputOption);
     QCommandLineOption intervalOption(QStringList() << "i" << "interval" ,
-                QCoreApplication::translate("main", "chosse a interval in ms"),
+                QCoreApplication::translate("main", "chosse an interval in ms"),
                 QCoreApplication::translate("main", "interval"));
     parser.addOption(intervalOption);
     QCommandLineOption repeatOption(QStringList() << "r" << "repeat" ,
-                QCoreApplication::translate("main", "chosse how much time to repeat"),
+                QCoreApplication::translate("main", "specify how many times to repeat"),
                 QCoreApplication::translate("main", "repeat"));
     parser.addOption(repeatOption);
 
@@ -96,19 +96,16 @@ int main(int argc, char *argv[])
         qDebug() << "Unable to create device.";
         return -1;
     }
-    //return start(packets, ms, dev);
-    for (int i=0;i<repeat;++i){
-        start(packets, ms, dev);
-    }
+    start(packets, ms, dev, repeat);
 
     return 0;
 }
 
 void help()
 {
-    qDebug() << "Usage:\n-f\t--file\t\tChoose a file containing the packet to send" <<
+    qDebug() << "Usage:\n-f\t--file\t\tChoose a file containing the packet(s) to send" <<
                 "\n-i\t--interval\tInterval between packets sent in ms (Default 100)" <<
-                "\n-r\t--repeat\tHow much time to repeat the send (Default 1 time)";
+                "\n-r\t--repeat\tSpecify how many times to repeat (Default 1)";
 }
 
 int parsePackets(QList<pcpp::Packet>* packets, QString file)
@@ -133,7 +130,7 @@ int parsePackets(QList<pcpp::Packet>* packets, QString file)
     return 1;
 }
 
-void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev)
+void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat)
 {
     if(!dev->open()){
         qDebug() << "Unable to open device, please run with elevated privileges.";
@@ -143,24 +140,26 @@ void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev)
     QString IP;
     int count=0;
     pcpp::IPv4Layer* ipLayer;
-    foreach(pcpp::Packet packet, packets)
+    for (int i=0; i<repeat; ++i)
     {
-        ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
-        ipLayer->setSrcIpAddress(pcpp::IPv4Address(IP.toStdString()));
-        packet.computeCalculateFields();
-        IP = QString::fromStdString(ipLayer->getDstIpAddress().toString());
-        if(dev->sendPacket(&packet))
+        foreach(pcpp::Packet packet, packets)
         {
-            qDebug() << "Packet sent to" << IP;
-            count++;
+            ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
+            ipLayer->setSrcIpAddress(pcpp::IPv4Address(IP.toStdString()));
+            packet.computeCalculateFields();
+            IP = QString::fromStdString(ipLayer->getDstIpAddress().toString());
+            if(dev->sendPacket(&packet))
+            {
+                qDebug() << "Packet sent to" << IP;
+                count++;
+            }
+            else
+            {
+                qDebug() << "Failed sending packet to" << IP;
+            }
+            QThread::msleep(ms);
         }
-        else
-        {
-            qDebug() << "Failed sending packet to" << IP;
-        }
-        QThread::msleep(ms);
     }
     dev->close();
     qDebug() << "Sent" << count << "packet(s).";
-
 }
