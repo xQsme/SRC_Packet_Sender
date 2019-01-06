@@ -140,11 +140,11 @@ void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int r
     QString IP;
     int count=0;
     pcpp::IPv4Layer* ipLayer;
-    foreach(pcpp::Packet packet, packets)
+    for(int i=0; i<packets.length(); i++)
     {
-        ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
+        ipLayer = packets[i].getLayerOfType<pcpp::IPv4Layer>();
         ipLayer->setSrcIpAddress(pcpp::IPv4Address(src.toStdString()));
-        packet.computeCalculateFields();
+        packets[i].computeCalculateFields();
     }
     QElapsedTimer elapsed;
     elapsed.start();
