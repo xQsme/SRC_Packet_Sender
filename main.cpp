@@ -140,26 +140,25 @@ void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int r
     QString IP;
     int count=0;
     pcpp::IPv4Layer* ipLayer;
+    foreach(pcpp::Packet packet, packets)
+    {
+        ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
+        ipLayer->setSrcIpAddress(pcpp::IPv4Address(src.toStdString()));
+        packet.computeCalculateFields();
+    }
+    QElapsedTimer elapsed;
+    elapsed.start();
     for (int i=0; i<repeat; ++i)
     {
         foreach(pcpp::Packet packet, packets)
         {
-            ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
-            ipLayer->setSrcIpAddress(pcpp::IPv4Address(src.toStdString()));
-            packet.computeCalculateFields();
-            IP = QString::fromStdString(ipLayer->getDstIpAddress().toString());
             if(dev->sendPacket(&packet))
             {
-                qDebug() << "Packet sent to" << IP;
                 count++;
-            }
-            else
-            {
-                qDebug() << "Failed sending packet to" << IP;
             }
             QThread::msleep(ms);
         }
     }
     dev->close();
-    qDebug() << "Sent" << count << "packet(s).";
+    qDebug() << "Sent" << count << "packet(s) in" << elapsed.elapsed() << "ms.";
 }
