@@ -4,10 +4,13 @@
 #include "PcapLiveDeviceList.h"
 #include "PcapFileDevice.h"
 #include "IPv4Layer.h"
+#include "thread.h"
 
 void help();
 int parsePackets(QList<pcpp::Packet>* packets, QString file);
-void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat, QString src);
+void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat, QString src, int threads);
+void thread(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat, pcpp::IPv4Layer* ipLayer);
+
 
 int main(int argc, char *argv[])
 {
@@ -28,6 +31,10 @@ int main(int argc, char *argv[])
                 QCoreApplication::translate("main", "specify how many times to repeat"),
                 QCoreApplication::translate("main", "repeat"));
     parser.addOption(repeatOption);
+    QCommandLineOption threadsOption(QStringList() << "t" << "threads" ,
+                QCoreApplication::translate("main", "specify how many threads to use"),
+                QCoreApplication::translate("main", "threads"));
+    parser.addOption(threadsOption);
 
 
     parser.process(a);
@@ -36,13 +43,13 @@ int main(int argc, char *argv[])
 
     int ms=100;
     int repeat = 1;
+    int threads = 1;
     QList<pcpp::Packet> packets;
 
     if(args.contains("h") || args.contains("help")){
         help();
         return 0;
     }
-
     if(args.contains("f") || args.contains("file")){
         QString file = parser.value(targetInputOption);
         if(parsePackets(&packets, file)==0)
@@ -54,16 +61,15 @@ int main(int argc, char *argv[])
         help();
         return 0;
     }
-
     if(args.contains("i") || args.contains("interval")){
        ms =  parser.value(intervalOption).toInt();
     }
-
     if(args.contains("r") || args.contains("repeat")){
        repeat =  parser.value(repeatOption).toInt();
     }
-
-
+    if(args.contains("t") || args.contains("threads")){
+       threads =  parser.value(threadsOption).toInt();
+    }
     std::string interfaceIPAddr;
     QList<QString> list;
     int i= 1;
@@ -96,7 +102,7 @@ int main(int argc, char *argv[])
         qDebug() << "Unable to create device.";
         return -1;
     }
-    start(packets, ms, dev, repeat, ip);
+    start(packets, ms, dev, repeat, ip, threads);
 
     return 0;
 }
@@ -105,7 +111,8 @@ void help()
 {
     qDebug() << "Usage:\n-f\t--file\t\tChoose a file containing the packet(s) to send" <<
                 "\n-i\t--interval\tInterval between packets sent in ms (Default 100)" <<
-                "\n-r\t--repeat\tSpecify how many times to repeat (Default 1)";
+                "\n-r\t--repeat\tSpecify how many times to repeat (Default 1)" <<
+                "\n-t\t--threads\tSpecify how many threads to use (Default 1)";
 }
 
 int parsePackets(QList<pcpp::Packet>* packets, QString file)
@@ -130,35 +137,45 @@ int parsePackets(QList<pcpp::Packet>* packets, QString file)
     return 1;
 }
 
-void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat, QString src)
+void start(QList<pcpp::Packet> packets, int ms, pcpp::PcapLiveDevice* dev, int repeat, QString src, int threads)
 {
     if(!dev->open()){
         qDebug() << "Unable to open device, please run with elevated privileges.";
         return;
     }
-    qDebug() << "Sending packet(s)...";
-    QString IP;
     int count=0;
     pcpp::IPv4Layer* ipLayer;
-    for(int i=0; i<packets.length(); i++)
+    foreach(pcpp::Packet packet, packets)
     {
-        ipLayer = packets[i].getLayerOfType<pcpp::IPv4Layer>();
+        ipLayer = packet.getLayerOfType<pcpp::IPv4Layer>();
         ipLayer->setSrcIpAddress(pcpp::IPv4Address(src.toStdString()));
-        packets[i].computeCalculateFields();
+        packet.computeCalculateFields();
+        count++;
     }
+    int remainder = repeat%threads;
+    int each = repeat/threads;
+    QList<Thread*> t;
+    for(int i=0; i<threads; i++)
+    {
+        int current=each;
+        if(remainder > 0)
+        {
+            current++;
+            remainder--;
+        }
+        t.append(new Thread(&packets, ms, dev, current));
+    }
+    qDebug() << "Sending packet(s) with" << threads << "threads...";
     QElapsedTimer elapsed;
     elapsed.start();
-    for (int i=0; i<repeat; ++i)
+    for(int i=0; i<threads; i++)
     {
-        foreach(pcpp::Packet packet, packets)
-        {
-            if(dev->sendPacket(&packet))
-            {
-                count++;
-            }
-            QThread::msleep(ms);
-        }
+        t[i]->start();
+    }
+    for(int i=0; i<threads; i++)
+    {
+        t[i]->wait();
     }
     dev->close();
-    qDebug() << "Sent" << count << "packet(s) in" << elapsed.elapsed() << "ms.";
+    qDebug() << "Sent" << count*repeat << "packet(s) in" << elapsed.elapsed() << "ms.";
 }

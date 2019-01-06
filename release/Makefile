@@ -50,8 +50,10 @@ OBJECTS_DIR   = ./
 
 ####### Files
 
-SOURCES       = ../SRC_Packet_Sender/main.cpp 
-OBJECTS       = main.o
+SOURCES       = ../SRC_Packet_Sender/main.cpp \
+		../SRC_Packet_Sender/thread.cpp 
+OBJECTS       = main.o \
+		thread.o
 DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/common/unix.conf \
 		/usr/lib/qt/mkspecs/common/linux.conf \
@@ -95,6 +97,7 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/modules/qt_KNewStuff.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KNewStuffCore.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KNotifications.pri \
+		/usr/lib/qt/mkspecs/modules/qt_KNotifyConfig.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KNTLM.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KParts.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KPty.pri \
@@ -293,7 +296,8 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/exceptions.prf \
 		/usr/lib/qt/mkspecs/features/yacc.prf \
 		/usr/lib/qt/mkspecs/features/lex.prf \
-		../SRC_Packet_Sender/packetSender.pro  ../SRC_Packet_Sender/main.cpp
+		../SRC_Packet_Sender/packetSender.pro ../SRC_Packet_Sender/thread.h ../SRC_Packet_Sender/main.cpp \
+		../SRC_Packet_Sender/thread.cpp
 QMAKE_TARGET  = packetSender
 DESTDIR       = 
 TARGET        = packetSender
@@ -348,6 +352,7 @@ Makefile: ../SRC_Packet_Sender/packetSender.pro /usr/lib/qt/mkspecs/linux-g++/qm
 		/usr/lib/qt/mkspecs/modules/qt_KNewStuff.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KNewStuffCore.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KNotifications.pri \
+		/usr/lib/qt/mkspecs/modules/qt_KNotifyConfig.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KNTLM.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KParts.pri \
 		/usr/lib/qt/mkspecs/modules/qt_KPty.pri \
@@ -593,6 +598,7 @@ Makefile: ../SRC_Packet_Sender/packetSender.pro /usr/lib/qt/mkspecs/linux-g++/qm
 /usr/lib/qt/mkspecs/modules/qt_KNewStuff.pri:
 /usr/lib/qt/mkspecs/modules/qt_KNewStuffCore.pri:
 /usr/lib/qt/mkspecs/modules/qt_KNotifications.pri:
+/usr/lib/qt/mkspecs/modules/qt_KNotifyConfig.pri:
 /usr/lib/qt/mkspecs/modules/qt_KNTLM.pri:
 /usr/lib/qt/mkspecs/modules/qt_KParts.pri:
 /usr/lib/qt/mkspecs/modules/qt_KPty.pri:
@@ -809,7 +815,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/qt/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents ../SRC_Packet_Sender/main.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../SRC_Packet_Sender/thread.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../SRC_Packet_Sender/main.cpp ../SRC_Packet_Sender/thread.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -862,8 +869,11 @@ compiler_clean: compiler_moc_predefs_clean
 
 ####### Compile
 
-main.o: ../SRC_Packet_Sender/main.cpp 
+main.o: ../SRC_Packet_Sender/main.cpp ../SRC_Packet_Sender/thread.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../SRC_Packet_Sender/main.cpp
+
+thread.o: ../SRC_Packet_Sender/thread.cpp ../SRC_Packet_Sender/thread.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o thread.o ../SRC_Packet_Sender/thread.cpp
 
 ####### Install
 
