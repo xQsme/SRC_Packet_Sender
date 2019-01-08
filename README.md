@@ -14,7 +14,8 @@ Usage:
 ```
 -f   --file            Choose a file containing the packet(s) to send
 -i   --interval       Interval between packets sent in ms (Default 100)
--r   --repeat         Specify how many times to repeat (Default 1)";
+-r   --repeat         Specify how many times to repeat (Default 1)
+-t   --threads        Specify how many threads to use (Default 1)
 ```
 
 Common Usage:
