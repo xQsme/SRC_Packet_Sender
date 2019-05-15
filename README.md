@@ -5,7 +5,7 @@ Requires qt5 and libpcap
 The point of this program is to send previously saved packets
 
 ```
-https://github.com/xQsme/SRC_Packet_Sender
+git clone https://github.com/xQsme/SRC_Packet_Sender
 cd SRC_Packet_Sender/release
 ./packetSender
 ```
